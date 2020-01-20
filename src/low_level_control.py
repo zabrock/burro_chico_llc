@@ -1,5 +1,7 @@
+#!/usr/bin/env python
+
 import rospy, time
-from i2cpwm_board.msgs import Servo, ServoArray
+from i2cpwm_board.msg import Servo, ServoArray
 from geometry_msgs.msg import Twist
 
 class ServoConvert():
@@ -14,7 +16,7 @@ class ServoConvert():
 
         self._center = center_value
         self._range = servo_range
-        self._half_range = 0.5*range
+        self._half_range = 0.5*servo_range
         self._dir = direction
 
         # Convert the range to be in the range [-1,1]
@@ -41,13 +43,13 @@ class DkLowLevelCtrl():
 
         # Create an actuator dictionary
         self.actuators = {}
-        self.actuators['throttle'] = ServoConvert(id=0)
-        self.actuators['steering'] = ServoConvert(id=1, direction=1) # Sets positive direction left
+        self.actuators['throttle'] = ServoConvert(id=1)
+        self.actuators['steering'] = ServoConvert(id=2, direction=1) # Sets positive direction left
 
         # Create the servo arra publisher and message
         self._servo_msg = ServoArray()
         for i in range(2): # One for speed, one for steering
-            self._servo_msgs.servos.append(Servo()) 
+            self._servo_msg.servos.append(Servo()) 
 
         self.pub = rospy.Publisher('/servos_absolute', ServoArray, queue_size=1)
         rospy.loginfo('> LLC Publisher correctly initialized')
@@ -91,9 +93,9 @@ class DkLowLevelCtrl():
         Publish the current actuator values.
         '''
         # Save current data to servo message
-        for actuator_name, servo_obj in self.actuators.iteritems():
-            self._servo_msg.servos[servo_obj.id].servo = servo_obj.id
-            self._servo_msg.servos[servo_obj.id].value = servo_obj.value_out
+        for actuator_name, servo_obj in self.actuators.items():
+            self._servo_msg.servos[servo_obj.id-1].servo = servo_obj.id
+            self._servo_msg.servos[servo_obj.id-1].value = servo_obj.value_out
 
         # Publish the message
         self.pub.publish(self._servo_msg)
